@@ -1,0 +1,1052 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mission Control — Chumi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* =========================
+       THEME VARIABLES
+    ========================== */
+    :root {
+      --bg: #050508;
+      --bg-soft: #0d0d14;
+      --card: rgba(255, 255, 255, 0.05);
+      --card-strong: rgba(255, 255, 255, 0.08);
+      --text: #f5f5ff;
+      --muted: #a5a6b8;
+      --line: rgba(255,255,255,0.06);
+      --accent: #8B5CF6;
+      --accent-soft: rgba(139, 92, 246, 0.20);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+
+      --radius: 16px;
+      --radius-sm: 12px;
+      --shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+
+      --space-1: 0.5rem;
+      --space-2: 0.75rem;
+      --space-3: 1rem;
+      --space-4: 1.5rem;
+      --space-5: 2rem;
+      --space-6: 2.5rem;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at top right, rgba(139,92,246,0.16), transparent 30%), var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-shell {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: var(--space-6);
+    }
+
+    /* =========================
+       HEADER
+    ========================== */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 1rem;
+      margin: 0 auto var(--space-5);
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(10, 10, 15, 0.65);
+      backdrop-filter: blur(14px);
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+    }
+
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--accent), #6d28d9);
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--line);
+      padding: 0.35rem;
+      border-radius: 999px;
+      justify-self: center;
+    }
+
+    .tab-btn {
+      border: 0;
+      color: var(--muted);
+      background: transparent;
+      padding: 0.5rem 0.9rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      font-weight: 600;
+    }
+
+    .tab-btn.active {
+      color: #fff;
+      background: var(--accent-soft);
+      box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.4);
+    }
+
+    .header-right {
+      display: flex;
+      justify-self: end;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .search {
+      width: min(300px, 45vw);
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 0.55rem 0.8rem;
+      outline: none;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .search:focus {
+      border-color: rgba(139,92,246,0.6);
+      box-shadow: 0 0 0 3px rgba(139,92,246,0.18);
+    }
+
+    .status-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.8);
+      animation: pulse 1.8s infinite;
+    }
+
+    /* =========================
+       SHARED UI
+    ========================== */
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .card {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: var(--radius);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+      animation: fadeInUp 0.5s ease both;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .card:hover { border-color: rgba(139,92,246,0.4); }
+
+    .section-title {
+      margin: 0 0 var(--space-3);
+      font-size: 1.1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .button {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 0.45rem 0.75rem;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .button:hover {
+      border-color: rgba(139,92,246,0.5);
+      background: rgba(139,92,246,0.15);
+    }
+
+    .muted { color: var(--muted); }
+
+    /* =========================
+       DASHBOARD
+    ========================== */
+    .welcome-bar {
+      padding: 1.1rem 1.2rem;
+      margin-bottom: var(--space-4);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 1rem;
+      margin-bottom: var(--space-4);
+    }
+
+    .metric {
+      padding: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), #a78bfa);
+    }
+
+    .metric .top {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+    }
+
+    .metric .value {
+      margin: 0.6rem 0 0.2rem;
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .trend.up { color: var(--success); }
+    .trend.down { color: var(--danger); }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 1rem;
+    }
+
+    .feed {
+      max-height: 380px;
+      overflow: auto;
+      padding: 1rem;
+    }
+
+    .feed-item {
+      padding: 0.7rem;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+      margin-bottom: 0.55rem;
+    }
+
+    .priority-list {
+      padding: 1rem;
+    }
+
+    .priority-item {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      margin-bottom: 0.6rem;
+    }
+
+    .priority-input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      padding: 0.5rem 0.65rem;
+    }
+
+    /* =========================
+       PROJECTS / KANBAN
+    ========================== */
+    .kanban {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 1rem;
+    }
+
+    .kanban-col {
+      padding: 0.9rem;
+      min-height: 420px;
+    }
+
+    .kanban-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.8rem;
+    }
+
+    .task {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      padding: 0.75rem;
+      margin-bottom: 0.65rem;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .task:hover { transform: translateY(-2px); border-color: rgba(139,92,246,0.45); }
+    .task h4 { margin: 0 0 0.35rem; font-size: 0.95rem; }
+    .task p { margin: 0 0 0.5rem; color: var(--muted); font-size: 0.86rem; }
+
+    .task-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .badge { padding: 0.2rem 0.5rem; border-radius: 999px; font-weight: 600; }
+    .badge.high { background: rgba(239,68,68,.2); color: #fca5a5; }
+    .badge.medium { background: rgba(245,158,11,.2); color: #fcd34d; }
+    .badge.low { background: rgba(34,197,94,.2); color: #86efac; }
+
+    /* =========================
+       TIMELINE
+    ========================== */
+    .timeline {
+      position: relative;
+      margin-left: 0.5rem;
+      padding-left: 1.4rem;
+      border-left: 2px solid rgba(139,92,246,0.35);
+    }
+
+    .phase {
+      position: relative;
+      margin-bottom: 1rem;
+      padding: 1rem;
+    }
+
+    .phase::before {
+      content: "";
+      position: absolute;
+      left: -1.95rem;
+      top: 1.1rem;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(139,92,246,0.2);
+    }
+
+    .phase.current {
+      border-color: rgba(139,92,246,0.5);
+      box-shadow: 0 0 24px rgba(139,92,246,0.25), var(--shadow);
+    }
+
+    .milestones { margin: 0.55rem 0 0; padding-left: 1rem; }
+    .milestones li { margin-bottom: 0.35rem; color: var(--muted); }
+
+    /* =========================
+       NOTES
+    ========================== */
+    .notes-wrap { padding: 1rem; }
+    textarea#notesInput {
+      width: 100%;
+      min-height: 420px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      padding: 1rem;
+      resize: vertical;
+      outline: none;
+      line-height: 1.5;
+    }
+
+    .notes-meta {
+      margin-top: 0.55rem;
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    /* =========================
+       MODAL
+    ========================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      background: rgba(0,0,0,0.6);
+      z-index: 50;
+      padding: 1rem;
+    }
+
+    .modal-backdrop.open { display: grid; }
+
+    .modal {
+      width: min(580px, 100%);
+      padding: 1rem;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(14,14,20,0.95);
+      box-shadow: var(--shadow);
+    }
+
+    .modal .field { margin-bottom: 0.7rem; }
+    .modal label { display: block; margin-bottom: 0.3rem; color: var(--muted); font-size: 0.85rem; }
+
+    .modal input, .modal textarea, .modal select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      padding: 0.55rem 0.65rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+      margin-top: 0.8rem;
+    }
+
+    .button.danger { border-color: rgba(239,68,68,.5); color: #fda4af; }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.35); opacity: 0.75; }
+    }
+
+    @media (max-width: 1180px) {
+      .header { grid-template-columns: 1fr; }
+      .tabs { justify-self: start; }
+      .header-right { justify-self: start; }
+      .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .app-shell { padding: 1rem; }
+      .metrics { grid-template-columns: 1fr; }
+      .kanban { grid-template-columns: 1fr; }
+      .search { width: 100%; }
+      .header-right { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="header card">
+      <div class="brand">
+        <div class="brand-logo">🚀</div>
+        <div>
+          <div>Mission Control</div>
+          <small class="muted">Le Funk — Socio</small>
+        </div>
+      </div>
+
+      <nav class="tabs" id="tabsNav">
+        <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+        <button class="tab-btn" data-tab="projects">📋 Projects</button>
+        <button class="tab-btn" data-tab="timeline">📅 Timeline</button>
+        <button class="tab-btn" data-tab="notes">📝 Notes</button>
+      </nav>
+
+      <div class="header-right">
+        <input id="searchInput" class="search" placeholder="Search everything… (⌘/Ctrl+K)" />
+        <div class="status-wrap"><span class="status-dot"></span>Online</div>
+      </div>
+    </header>
+
+    <main>
+      <!-- DASHBOARD TAB -->
+      <section class="tab-pane active" id="tab-dashboard">
+        <div class="welcome-bar card">
+          <div>
+            <h2 id="welcomeText" style="margin:0;">Good evening, Chumi</h2>
+            <div class="muted" id="liveDateTime"></div>
+          </div>
+          <div class="muted">Main Goal: <strong style="color:#fff">Desarrollar un PM by En un mes</strong></div>
+        </div>
+
+        <div class="metrics">
+          <article class="metric card">
+            <div class="top"><span>🎯 MVP funcional</span><span class="trend up" id="mvpTrend">+0%</span></div>
+            <div class="value" id="mvpValue">0%</div>
+            <small class="muted">Target completion progress</small>
+          </article>
+          <article class="metric card">
+            <div class="top"><span>📁 Active Projects</span><span class="trend up">Live</span></div>
+            <div class="value" id="projectsValue">0</div>
+            <small class="muted">Tasks in backlog + in progress</small>
+          </article>
+          <article class="metric card">
+            <div class="top"><span>✅ Tasks Today</span><span class="trend up" id="tasksTrend">+0</span></div>
+            <div class="value" id="tasksTodayValue">0</div>
+            <small class="muted">Items completed today</small>
+          </article>
+          <article class="metric card">
+            <div class="top"><span>⏳ Days to Goal</span><span class="trend down">Countdown</span></div>
+            <div class="value" id="daysGoalValue">30</div>
+            <small class="muted">Until one-month target</small>
+          </article>
+        </div>
+
+        <div class="dashboard-grid">
+          <section class="card">
+            <div class="section-title" style="padding:1rem 1rem 0;">
+              <span>Recent Activity</span>
+            </div>
+            <div class="feed" id="activityFeed"></div>
+          </section>
+
+          <section class="card">
+            <div class="section-title" style="padding:1rem 1rem 0;">
+              <span>Top Priorities</span>
+              <button class="button" id="addPriorityBtn">+ Add Priority</button>
+            </div>
+            <div class="priority-list" id="priorityList"></div>
+          </section>
+        </div>
+      </section>
+
+      <!-- PROJECTS TAB -->
+      <section class="tab-pane" id="tab-projects">
+        <div class="kanban" id="kanbanBoard"></div>
+      </section>
+
+      <!-- TIMELINE TAB -->
+      <section class="tab-pane" id="tab-timeline">
+        <div class="timeline" id="timelineContainer"></div>
+      </section>
+
+      <!-- NOTES TAB -->
+      <section class="tab-pane" id="tab-notes">
+        <div class="card notes-wrap">
+          <h3 class="section-title">Personal Notes</h3>
+          <textarea id="notesInput" placeholder="# Ideas\n\n- ..."></textarea>
+          <div class="notes-meta">
+            <span id="charCount">0 chars</span>
+            <span id="lastSaved">Not saved yet</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- TASK MODAL -->
+  <div class="modal-backdrop" id="taskModalBackdrop">
+    <div class="modal">
+      <h3 id="modalTitle" style="margin-top:0;">Add Task</h3>
+      <div class="field">
+        <label>Title</label>
+        <input id="taskTitleInput" maxlength="80" />
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea id="taskDescInput" rows="3" maxlength="240"></textarea>
+      </div>
+      <div class="field">
+        <label>Priority</label>
+        <select id="taskPriorityInput">
+          <option value="high">High</option>
+          <option value="medium" selected>Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Column</label>
+        <select id="taskColumnInput">
+          <option value="backlog">Backlog</option>
+          <option value="inProgress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="button" id="cancelTaskBtn">Cancel</button>
+        <button class="button danger" id="deleteTaskBtn" style="display:none;">Delete</button>
+        <button class="button" id="saveTaskBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================
+       STORAGE + CONFIG
+    ========================== */
+    const STORAGE_KEYS = {
+      tasks: 'mc_tasks_v1',
+      priorities: 'mc_priorities_v1',
+      activities: 'mc_activities_v1',
+      notes: 'mc_notes_v1',
+      notesSavedAt: 'mc_notes_saved_at_v1',
+      mvpProgress: 'mc_mvp_progress_v1',
+      goalStartDate: 'mc_goal_start_date_v1'
+    };
+
+    const timelinePhases = [
+      {
+        title: 'Phase 1 — Foundation',
+        range: 'Week 1',
+        description: 'Define product scope, architecture and delivery plan for MVP.',
+        milestones: [
+          { text: 'Problem statement validated', done: true },
+          { text: 'Core modules mapped', done: true },
+          { text: 'Initial backlog prioritized', done: false }
+        ],
+        current: true
+      },
+      {
+        title: 'Phase 2 — Build Sprint',
+        range: 'Week 2-3',
+        description: 'Develop core workflows, dashboard and operational controls.',
+        milestones: [
+          { text: 'Auth + role model', done: false },
+          { text: 'Task board functional', done: false },
+          { text: 'Executive view online', done: false }
+        ],
+        current: false
+      },
+      {
+        title: 'Phase 3 — Polish + Launch',
+        range: 'Week 4',
+        description: 'QA hardening, bug fixes, deployment and go-live rituals.',
+        milestones: [
+          { text: 'Smoke tests pass', done: false },
+          { text: 'Pilot usage with team', done: false },
+          { text: 'MVP functional release', done: false }
+        ],
+        current: false
+      }
+    ];
+
+    const defaultState = {
+      tasks: {
+        backlog: [
+          { id: crypto.randomUUID(), title: 'Define MVP acceptance checklist', description: 'Set clear criteria for MVP funcional delivery.', priority: 'high', createdAt: new Date().toISOString() }
+        ],
+        inProgress: [
+          { id: crypto.randomUUID(), title: 'Build PM core workflow', description: 'Scope projects, statuses and owners.', priority: 'medium', createdAt: new Date().toISOString() }
+        ],
+        done: []
+      },
+      priorities: [
+        { id: crypto.randomUUID(), text: 'Ship MVP functional within one month', checked: false },
+        { id: crypto.randomUUID(), text: 'Track daily execution discipline', checked: true }
+      ],
+      activities: [
+        { id: crypto.randomUUID(), text: 'Mission Control initialized', timestamp: new Date().toISOString() }
+      ]
+    };
+
+    /* =========================
+       UTILITIES
+    ========================== */
+    const $ = (sel) => document.querySelector(sel);
+    const formatDate = (iso) => new Date(iso).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+
+    function load(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch { return fallback; }
+    }
+
+    function save(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+
+    function addActivity(text) {
+      const activities = load(STORAGE_KEYS.activities, defaultState.activities);
+      activities.unshift({ id: crypto.randomUUID(), text, timestamp: new Date().toISOString() });
+      save(STORAGE_KEYS.activities, activities.slice(0, 150));
+      renderActivityFeed();
+    }
+
+    /* =========================
+       TAB NAVIGATION
+    ========================== */
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        $(`#tab-${btn.dataset.tab}`).classList.add('active');
+      });
+    });
+
+    /* =========================
+       WELCOME + CLOCK
+    ========================== */
+    function updateWelcomeClock() {
+      const now = new Date();
+      const hour = now.getHours();
+      const part = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+      $('#welcomeText').textContent = `Good ${part}, Chumi`;
+      $('#liveDateTime').textContent = now.toLocaleString([], {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+        hour: 'numeric', minute: '2-digit'
+      });
+    }
+    setInterval(updateWelcomeClock, 1000);
+    updateWelcomeClock();
+
+    /* =========================
+       PRIORITIES
+    ========================== */
+    function getPriorities() { return load(STORAGE_KEYS.priorities, defaultState.priorities); }
+
+    function renderPriorities() {
+      const priorities = getPriorities();
+      const root = $('#priorityList');
+      root.innerHTML = '';
+
+      priorities.forEach((p) => {
+        const row = document.createElement('div');
+        row.className = 'priority-item';
+        row.innerHTML = `
+          <input type="checkbox" ${p.checked ? 'checked' : ''} />
+          <input class="priority-input" value="${p.text.replace(/"/g, '&quot;')}" />
+          <button class="button" title="Delete">✕</button>
+        `;
+
+        const [chk, input, del] = row.children;
+        chk.addEventListener('change', () => {
+          p.checked = chk.checked;
+          save(STORAGE_KEYS.priorities, priorities);
+          addActivity(`Priority ${p.checked ? 'completed' : 'reopened'}: ${p.text}`);
+          renderMetrics();
+        });
+
+        input.addEventListener('change', () => {
+          p.text = input.value.trim() || p.text;
+          save(STORAGE_KEYS.priorities, priorities);
+          addActivity('Priority updated');
+        });
+
+        del.addEventListener('click', () => {
+          const next = priorities.filter(x => x.id !== p.id);
+          save(STORAGE_KEYS.priorities, next);
+          addActivity('Priority removed');
+          renderPriorities();
+          renderMetrics();
+        });
+
+        root.appendChild(row);
+      });
+    }
+
+    $('#addPriorityBtn').addEventListener('click', () => {
+      const priorities = getPriorities();
+      priorities.push({ id: crypto.randomUUID(), text: 'New priority', checked: false });
+      save(STORAGE_KEYS.priorities, priorities);
+      addActivity('New priority added');
+      renderPriorities();
+      renderMetrics();
+    });
+
+    /* =========================
+       ACTIVITY FEED
+    ========================== */
+    function renderActivityFeed() {
+      const items = load(STORAGE_KEYS.activities, defaultState.activities);
+      const root = $('#activityFeed');
+      root.innerHTML = items.length
+        ? items.map(item => `
+          <div class="feed-item">
+            <div>${item.text}</div>
+            <small class="muted">${formatDate(item.timestamp)}</small>
+          </div>
+        `).join('')
+        : `<div class="muted">No activity yet.</div>`;
+    }
+
+    /* =========================
+       KANBAN PROJECTS
+    ========================== */
+    const columnMap = {
+      backlog: 'Backlog',
+      inProgress: 'In Progress',
+      done: 'Done'
+    };
+
+    function getTasks() { return load(STORAGE_KEYS.tasks, defaultState.tasks); }
+    function setTasks(v) { save(STORAGE_KEYS.tasks, v); }
+
+    let editingTask = null;
+
+    function openTaskModal(task = null, preferredColumn = 'backlog') {
+      editingTask = task;
+      $('#taskModalBackdrop').classList.add('open');
+      $('#modalTitle').textContent = task ? 'Edit Task' : 'Add Task';
+      $('#deleteTaskBtn').style.display = task ? 'inline-block' : 'none';
+      $('#taskTitleInput').value = task?.title || '';
+      $('#taskDescInput').value = task?.description || '';
+      $('#taskPriorityInput').value = task?.priority || 'medium';
+      $('#taskColumnInput').value = task?.column || preferredColumn;
+      $('#taskTitleInput').focus();
+    }
+
+    function closeTaskModal() {
+      $('#taskModalBackdrop').classList.remove('open');
+      editingTask = null;
+    }
+
+    function renderKanban() {
+      const tasks = getTasks();
+      const root = $('#kanbanBoard');
+      root.innerHTML = '';
+
+      Object.entries(columnMap).forEach(([key, label], i) => {
+        const col = document.createElement('section');
+        col.className = 'kanban-col card';
+        col.style.animationDelay = `${i * 80}ms`;
+
+        const cards = (tasks[key] || []).map(task => `
+          <article class="task" data-id="${task.id}" data-column="${key}">
+            <h4>${task.title}</h4>
+            <p>${task.description || 'No description'}</p>
+            <div class="task-meta">
+              <span class="badge ${task.priority}">${task.priority}</span>
+              <span>${new Date(task.createdAt).toLocaleDateString()}</span>
+            </div>
+          </article>
+        `).join('');
+
+        col.innerHTML = `
+          <div class="kanban-head">
+            <strong>${label} <span class="muted">(${(tasks[key] || []).length})</span></strong>
+            <button class="button" data-add="${key}">+ Add</button>
+          </div>
+          ${cards || '<div class="muted">No tasks</div>'}
+        `;
+
+        root.appendChild(col);
+      });
+
+      root.querySelectorAll('[data-add]').forEach(btn => {
+        btn.addEventListener('click', () => openTaskModal(null, btn.dataset.add));
+      });
+
+      root.querySelectorAll('.task').forEach(el => {
+        el.addEventListener('click', () => {
+          const tasks = getTasks();
+          const column = el.dataset.column;
+          const task = tasks[column].find(t => t.id === el.dataset.id);
+          openTaskModal({ ...task, column }, column);
+        });
+      });
+
+      renderMetrics();
+    }
+
+    $('#cancelTaskBtn').addEventListener('click', closeTaskModal);
+    $('#taskModalBackdrop').addEventListener('click', (e) => {
+      if (e.target.id === 'taskModalBackdrop') closeTaskModal();
+    });
+
+    $('#saveTaskBtn').addEventListener('click', () => {
+      const title = $('#taskTitleInput').value.trim();
+      if (!title) return;
+
+      const payload = {
+        title,
+        description: $('#taskDescInput').value.trim(),
+        priority: $('#taskPriorityInput').value,
+        column: $('#taskColumnInput').value
+      };
+
+      const tasks = getTasks();
+
+      if (editingTask) {
+        Object.keys(tasks).forEach(col => {
+          tasks[col] = tasks[col].filter(t => t.id !== editingTask.id);
+        });
+
+        tasks[payload.column].unshift({
+          id: editingTask.id,
+          title: payload.title,
+          description: payload.description,
+          priority: payload.priority,
+          createdAt: editingTask.createdAt
+        });
+        addActivity(`Task updated: ${payload.title}`);
+      } else {
+        tasks[payload.column].unshift({
+          id: crypto.randomUUID(),
+          title: payload.title,
+          description: payload.description,
+          priority: payload.priority,
+          createdAt: new Date().toISOString()
+        });
+        addActivity(`Task created: ${payload.title}`);
+      }
+
+      setTasks(tasks);
+      renderKanban();
+      closeTaskModal();
+    });
+
+    $('#deleteTaskBtn').addEventListener('click', () => {
+      if (!editingTask) return;
+      const tasks = getTasks();
+      Object.keys(tasks).forEach(col => {
+        tasks[col] = tasks[col].filter(t => t.id !== editingTask.id);
+      });
+      setTasks(tasks);
+      addActivity(`Task deleted: ${editingTask.title}`);
+      renderKanban();
+      closeTaskModal();
+    });
+
+    /* =========================
+       TIMELINE
+    ========================== */
+    function renderTimeline() {
+      const root = $('#timelineContainer');
+      root.innerHTML = timelinePhases.map((phase) => `
+        <article class="phase card ${phase.current ? 'current' : ''}">
+          <h3 style="margin:.1rem 0 .35rem;">${phase.title}</h3>
+          <div class="muted" style="margin-bottom:.5rem;">${phase.range}</div>
+          <p style="margin:0;">${phase.description}</p>
+          <ul class="milestones">
+            ${phase.milestones.map(m => `<li>${m.done ? '✅' : '⬜'} ${m.text}</li>`).join('')}
+          </ul>
+        </article>
+      `).join('');
+    }
+
+    /* =========================
+       NOTES
+    ========================== */
+    const notesInput = $('#notesInput');
+
+    function renderNotesMeta() {
+      const text = notesInput.value;
+      $('#charCount').textContent = `${text.length} chars`;
+      const savedAt = localStorage.getItem(STORAGE_KEYS.notesSavedAt);
+      $('#lastSaved').textContent = savedAt ? `Last saved: ${formatDate(savedAt)}` : 'Not saved yet';
+    }
+
+    notesInput.addEventListener('input', () => {
+      localStorage.setItem(STORAGE_KEYS.notes, notesInput.value);
+      localStorage.setItem(STORAGE_KEYS.notesSavedAt, new Date().toISOString());
+      renderNotesMeta();
+    });
+
+    /* =========================
+       METRICS
+    ========================== */
+    function renderMetrics() {
+      const tasks = getTasks();
+      const allTasks = [...tasks.backlog, ...tasks.inProgress, ...tasks.done];
+      const activeProjects = tasks.backlog.length + tasks.inProgress.length;
+
+      const today = new Date().toDateString();
+      const doneToday = tasks.done.filter(t => new Date(t.createdAt).toDateString() === today).length;
+
+      let mvp = Number(localStorage.getItem(STORAGE_KEYS.mvpProgress));
+      if (!Number.isFinite(mvp)) {
+        const total = allTasks.length || 1;
+        mvp = Math.round((tasks.done.length / total) * 100);
+        localStorage.setItem(STORAGE_KEYS.mvpProgress, String(mvp));
+      }
+
+      const goalStartRaw = localStorage.getItem(STORAGE_KEYS.goalStartDate);
+      const startDate = goalStartRaw ? new Date(goalStartRaw) : new Date();
+      if (!goalStartRaw) localStorage.setItem(STORAGE_KEYS.goalStartDate, startDate.toISOString());
+      const endDate = new Date(startDate.getTime() + (30 * 24 * 60 * 60 * 1000));
+      const daysRemaining = Math.max(0, Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24)));
+
+      $('#mvpValue').textContent = `${mvp}%`;
+      $('#mvpTrend').textContent = `${mvp >= 50 ? '+' : ''}${mvp - 45}%`;
+      $('#projectsValue').textContent = activeProjects;
+      $('#tasksTodayValue').textContent = doneToday;
+      $('#tasksTrend').textContent = `+${doneToday}`;
+      $('#daysGoalValue').textContent = daysRemaining;
+    }
+
+    /* =========================
+       SEARCH + SHORTCUT
+    ========================== */
+    function runSearch(term) {
+      const q = term.trim().toLowerCase();
+      if (!q) {
+        document.querySelectorAll('.task, .feed-item, .priority-item').forEach(el => {
+          el.style.display = '';
+        });
+        return;
+      }
+
+      document.querySelectorAll('.task, .feed-item, .priority-item').forEach(el => {
+        const text = el.textContent.toLowerCase();
+        el.style.display = text.includes(q) ? '' : 'none';
+      });
+    }
+
+    $('#searchInput').addEventListener('input', (e) => runSearch(e.target.value));
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        $('#searchInput').focus();
+        $('#searchInput').select();
+      }
+    });
+
+    /* =========================
+       BOOTSTRAP
+    ========================== */
+    (function init() {
+      if (!localStorage.getItem(STORAGE_KEYS.tasks)) save(STORAGE_KEYS.tasks, defaultState.tasks);
+      if (!localStorage.getItem(STORAGE_KEYS.priorities)) save(STORAGE_KEYS.priorities, defaultState.priorities);
+      if (!localStorage.getItem(STORAGE_KEYS.activities)) save(STORAGE_KEYS.activities, defaultState.activities);
+
+      notesInput.value = localStorage.getItem(STORAGE_KEYS.notes) || '';
+
+      renderPriorities();
+      renderActivityFeed();
+      renderKanban();
+      renderTimeline();
+      renderNotesMeta();
+      renderMetrics();
+    })();
+  </script>
+</body>
+</html>
