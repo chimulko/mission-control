@@ -439,6 +439,31 @@
     .projection-item h3 { margin:.4rem 0 0; }
 
     /* =========================
+       COMMAND CENTER
+    ========================== */
+    .command-center-card,.decisions-card { padding: 1rem; margin-bottom: 1rem; }
+    .agents-grid { display:grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap:.8rem; }
+    .agent-card { border:1px solid var(--line); border-radius:12px; background: rgba(255,255,255,.03); padding:.8rem; cursor:pointer; transition:.2s ease; }
+    .agent-card:hover { transform: translateY(-2px); border-color: rgba(139,92,246,.45); }
+    .agent-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:.35rem; }
+    .agent-role { color: var(--muted); font-size:.86rem; margin-bottom:.5rem; }
+    .agent-meta { display:flex; justify-content:space-between; color: var(--muted); font-size:.78rem; }
+    .agent-status { display:flex; align-items:center; gap:.35rem; font-size:.8rem; text-transform:capitalize; }
+    .dot { width:8px; height:8px; border-radius:50%; }
+    .dot.online { background:#22c55e; box-shadow:0 0 10px rgba(34,197,94,.8); }
+    .dot.busy { background:#f59e0b; box-shadow:0 0 10px rgba(245,158,11,.8); }
+    .dot.offline { background:#6b7280; box-shadow:0 0 10px rgba(107,114,128,.6); }
+    .agent-panel { position: fixed; right: 0; top: 0; height: 100vh; width: min(460px,95vw); border-left:1px solid var(--line); background: rgba(9,9,14,.96); backdrop-filter: blur(12px); padding: 1rem; box-shadow: -12px 0 40px rgba(0,0,0,.45); transform: translateX(100%); transition: transform .25s ease; z-index: 60; overflow:auto; }
+    .agent-panel.open { transform: translateX(0); }
+    .agent-panel-head { display:flex; justify-content:space-between; align-items:center; }
+    .panel-list { margin-top:.2rem; padding-left:1rem; color:var(--muted); }
+    .panel-log { display:grid; gap:.45rem; }
+    .panel-log-item { border:1px solid var(--line); border-radius:10px; padding:.55rem; background: rgba(255,255,255,.03); }
+    .panel-notes { border:1px solid var(--line); border-radius:10px; padding:.6rem; background: rgba(255,255,255,.03); color:var(--muted); }
+    .decision-item { border:1px solid var(--line); border-radius:12px; background: rgba(255,255,255,.03); padding:.75rem; margin-bottom:.6rem; }
+    .decision-item small { color:var(--muted); }
+
+    /* =========================
        MODAL
     ========================== */
     .modal-backdrop {
@@ -507,7 +532,7 @@
       .kanban { grid-template-columns: 1fr; }
       .search { width: 100%; }
       .header-right { width: 100%; }
-      .revenue-grid, .projection-grid { grid-template-columns: 1fr; }
+      .revenue-grid, .projection-grid, .agents-grid { grid-template-columns: 1fr; }
       .client-row { grid-template-columns: 1fr; }
     }
   </style>
@@ -528,6 +553,7 @@
         <button class="tab-btn" data-tab="projects">📋 Projects</button>
         <button class="tab-btn" data-tab="timeline">📅 Timeline</button>
         <button class="tab-btn" data-tab="revenue">💰 Revenue</button>
+        <button class="tab-btn" data-tab="command">🏢 Command Center</button>
         <button class="tab-btn" data-tab="notes">📝 Notes</button>
       </nav>
 
@@ -640,6 +666,19 @@
         </section>
       </section>
 
+      <!-- COMMAND CENTER TAB -->
+      <section class="tab-pane" id="tab-command">
+        <section class="card command-center-card">
+          <div class="section-title"><span>AI Agents / Team</span></div>
+          <div class="agents-grid" id="agentsGrid"></div>
+        </section>
+
+        <section class="card decisions-card">
+          <div class="section-title"><span>Executive Decisions</span></div>
+          <div id="decisionsList"></div>
+        </section>
+      </section>
+
       <!-- NOTES TAB -->
       <section class="tab-pane" id="tab-notes">
         <div class="card notes-wrap">
@@ -652,6 +691,42 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- AGENT DETAIL PANEL -->
+  <aside class="agent-panel" id="agentPanel">
+    <div class="agent-panel-head">
+      <h3 id="agentPanelName" style="margin:0;">Agent</h3>
+      <button class="button" id="closeAgentPanelBtn">Close</button>
+    </div>
+    <p class="muted" id="agentPanelRole"></p>
+    <p id="agentPanelDescription"></p>
+
+    <h4 style="margin-bottom:.4rem;">Capabilities</h4>
+    <ul id="agentCapabilities" class="panel-list"></ul>
+
+    <h4 style="margin-bottom:.4rem;">Recent Activity</h4>
+    <div id="agentActivityLog" class="panel-log"></div>
+
+    <h4 style="margin-bottom:.4rem;">Performance Notes</h4>
+    <div id="agentPerformanceNotes" class="panel-notes"></div>
+
+    <button class="button" id="openSendTaskBtn" style="margin-top:1rem;">Send Task</button>
+  </aside>
+
+  <!-- SEND TASK MODAL -->
+  <div class="modal-backdrop" id="sendTaskModalBackdrop">
+    <div class="modal">
+      <h3 id="sendTaskTitle" style="margin-top:0;">Send Task</h3>
+      <div class="field">
+        <label>Task Instructions</label>
+        <textarea id="sendTaskTextarea" rows="5" maxlength="800" placeholder="Describe the task clearly..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="button" id="cancelSendTaskBtn">Cancel</button>
+        <button class="button" id="confirmSendTaskBtn">Send</button>
+      </div>
+    </div>
   </div>
 
   <!-- CLIENT MODAL -->
@@ -725,7 +800,9 @@
       mvpProgress: 'mc_mvp_progress_v1',
       goalStartDate: 'mc_goal_start_date_v1',
       clients: 'mc_clients_v1',
-      revenueGoal: 'mc_revenue_goal_v1'
+      revenueGoal: 'mc_revenue_goal_v1',
+      agents: 'mc_agents_v1',
+      decisions: 'mc_decisions_v1'
     };
 
     const timelinePhases = [
@@ -784,6 +861,63 @@
       clients: [
         { id: crypto.randomUUID(), name: 'Le Funk Core', monthlyValue: 3500, status: 'active', startDate: new Date().toISOString().slice(0,10) },
         { id: crypto.randomUUID(), name: 'Pilot Client', monthlyValue: 1200, status: 'pending', startDate: new Date().toISOString().slice(0,10) }
+      ],
+      agents: [
+        {
+          id: crypto.randomUUID(),
+          name: 'Atlas', role: 'Product Strategist', status: 'online', model: 'GPT-5.3 Codex',
+          lastActive: new Date().toISOString(),
+          description: 'Converts business goals into executable product plans and milestones.',
+          capabilities: ['Roadmapping', 'Scope definition', 'Risk triage'],
+          performanceNotes: 'Excellent at clarity and prioritization under time pressure.',
+          activity: [
+            { text: 'Mapped MVP scope into 4 deliverables', timestamp: new Date().toISOString() },
+            { text: 'Reviewed sprint sequencing', timestamp: new Date().toISOString() }
+          ]
+        },
+        {
+          id: crypto.randomUUID(),
+          name: 'Nyx', role: 'UX Systems Lead', status: 'busy', model: 'Claude Opus 4.6',
+          lastActive: new Date().toISOString(),
+          description: 'Designs high-clarity flows and visual systems for executive and team operations.',
+          capabilities: ['UX architecture', 'Design systems', 'Mobile-first layout'],
+          performanceNotes: 'Strong user empathy; occasionally needs tighter time-boxing.',
+          activity: [{ text: 'Improved control dashboard hierarchy', timestamp: new Date().toISOString() }]
+        },
+        {
+          id: crypto.randomUUID(),
+          name: 'Volt', role: 'Automation Engineer', status: 'online', model: 'GPT-4.1',
+          lastActive: new Date().toISOString(),
+          description: 'Builds integrations, automations and guardrails for reliable execution.',
+          capabilities: ['APIs', 'CI/CD', 'Monitoring hooks'],
+          performanceNotes: 'Fast and reliable, especially in repetitive flows.',
+          activity: [{ text: 'Automated release checklist execution', timestamp: new Date().toISOString() }]
+        },
+        {
+          id: crypto.randomUUID(),
+          name: 'Echo', role: 'Ops Analyst', status: 'offline', model: 'Gemini 1.5 Pro',
+          lastActive: new Date(Date.now()-1000*60*90).toISOString(),
+          description: 'Tracks operational quality, anomalies and recommends corrective actions.',
+          capabilities: ['KPI analysis', 'Incident summaries', 'QA checks'],
+          performanceNotes: 'Very thorough reporting; best when fed clean telemetry.',
+          activity: [{ text: 'Generated weekly ops health summary', timestamp: new Date(Date.now()-1000*60*120).toISOString() }]
+        }
+      ],
+      decisions: [
+        {
+          id: crypto.randomUUID(),
+          date: new Date().toISOString().slice(0,10),
+          question: 'Should we prioritize PM core workflow over advanced analytics?',
+          summary: 'Yes. Focus on core PM workflow first to secure MVP adoption velocity.',
+          consultedAgents: ['Atlas', 'Nyx']
+        },
+        {
+          id: crypto.randomUUID(),
+          date: new Date().toISOString().slice(0,10),
+          question: 'Do we invest this week in automation or UI polish?',
+          summary: 'Split 70/30 toward automation to reduce execution risk and rework.',
+          consultedAgents: ['Volt', 'Echo']
+        }
       ]
     };
 
@@ -1113,6 +1247,101 @@
     }
 
     /* =========================
+       COMMAND CENTER
+    ========================== */
+    let activeAgentId = null;
+
+    function getAgents() { return load(STORAGE_KEYS.agents, defaultState.agents); }
+    function setAgents(v) { save(STORAGE_KEYS.agents, v); }
+    function getDecisions() { return load(STORAGE_KEYS.decisions, defaultState.decisions); }
+
+    function renderAgents() {
+      const agents = getAgents();
+      const grid = $('#agentsGrid');
+      if (!grid) return;
+      grid.innerHTML = agents.map(a => `
+        <article class="agent-card" data-agent-id="${a.id}">
+          <div class="agent-head">
+            <strong>${a.name}</strong>
+            <span class="agent-status"><span class="dot ${a.status}"></span>${a.status}</span>
+          </div>
+          <div class="agent-role">${a.role}</div>
+          <div class="agent-meta">
+            <span>${a.model}</span>
+            <span>${formatDate(a.lastActive)}</span>
+          </div>
+        </article>
+      `).join('');
+
+      grid.querySelectorAll('[data-agent-id]').forEach(card => {
+        card.addEventListener('click', () => openAgentPanel(card.dataset.agentId));
+      });
+    }
+
+    function renderDecisions() {
+      const decisions = getDecisions();
+      const root = $('#decisionsList');
+      if (!root) return;
+      root.innerHTML = decisions.map(d => `
+        <article class="decision-item">
+          <small>${d.date}</small>
+          <h4 style="margin:.35rem 0;">${d.question}</h4>
+          <p style="margin:.2rem 0;">${d.summary}</p>
+          <small>Consulted: ${d.consultedAgents.join(', ')}</small>
+        </article>
+      `).join('');
+    }
+
+    function openAgentPanel(agentId) {
+      activeAgentId = agentId;
+      const agent = getAgents().find(a => a.id === agentId);
+      if (!agent) return;
+      $('#agentPanelName').textContent = agent.name;
+      $('#agentPanelRole').textContent = `${agent.role} · ${agent.model}`;
+      $('#agentPanelDescription').textContent = agent.description;
+      $('#agentCapabilities').innerHTML = (agent.capabilities || []).map(c => `<li>${c}</li>`).join('');
+      $('#agentPerformanceNotes').textContent = agent.performanceNotes || '—';
+      $('#agentActivityLog').innerHTML = (agent.activity || []).slice(0,8).map(i => `
+        <div class="panel-log-item">
+          <div>${i.text}</div>
+          <small class="muted">${formatDate(i.timestamp)}</small>
+        </div>
+      `).join('');
+      $('#agentPanel').classList.add('open');
+      $('#sendTaskTitle').textContent = `Send Task — ${agent.name}`;
+    }
+
+    function closeAgentPanel() { $('#agentPanel').classList.remove('open'); }
+
+    $('#closeAgentPanelBtn').addEventListener('click', closeAgentPanel);
+    $('#openSendTaskBtn').addEventListener('click', () => {
+      if (!activeAgentId) return;
+      $('#sendTaskTextarea').value = '';
+      $('#sendTaskModalBackdrop').classList.add('open');
+      $('#sendTaskTextarea').focus();
+    });
+
+    $('#cancelSendTaskBtn').addEventListener('click', () => $('#sendTaskModalBackdrop').classList.remove('open'));
+    $('#sendTaskModalBackdrop').addEventListener('click', (e) => { if (e.target.id === 'sendTaskModalBackdrop') $('#sendTaskModalBackdrop').classList.remove('open'); });
+
+    $('#confirmSendTaskBtn').addEventListener('click', () => {
+      const text = $('#sendTaskTextarea').value.trim();
+      if (!text || !activeAgentId) return;
+      const agents = getAgents();
+      const idx = agents.findIndex(a => a.id === activeAgentId);
+      if (idx === -1) return;
+      agents[idx].activity = agents[idx].activity || [];
+      agents[idx].activity.unshift({ text: `Task assigned: ${text}`, timestamp: new Date().toISOString() });
+      agents[idx].lastActive = new Date().toISOString();
+      agents[idx].status = 'busy';
+      setAgents(agents);
+      addActivity(`Task sent to ${agents[idx].name}`);
+      $('#sendTaskModalBackdrop').classList.remove('open');
+      renderAgents();
+      openAgentPanel(activeAgentId);
+    });
+
+    /* =========================
        REVENUE
     ========================== */
     const revenueGoalInput = $('#revenueGoalInput');
@@ -1291,6 +1520,8 @@
       if (!localStorage.getItem(STORAGE_KEYS.activities)) save(STORAGE_KEYS.activities, defaultState.activities);
       if (!localStorage.getItem(STORAGE_KEYS.clients)) save(STORAGE_KEYS.clients, defaultState.clients);
       if (!localStorage.getItem(STORAGE_KEYS.revenueGoal)) localStorage.setItem(STORAGE_KEYS.revenueGoal, '10000');
+      if (!localStorage.getItem(STORAGE_KEYS.agents)) save(STORAGE_KEYS.agents, defaultState.agents);
+      if (!localStorage.getItem(STORAGE_KEYS.decisions)) save(STORAGE_KEYS.decisions, defaultState.decisions);
 
       notesInput.value = localStorage.getItem(STORAGE_KEYS.notes) || '';
 
@@ -1299,6 +1530,8 @@
       renderKanban();
       renderTimeline();
       renderRevenue();
+      renderAgents();
+      renderDecisions();
       renderNotesMeta();
       renderMetrics();
     })();
