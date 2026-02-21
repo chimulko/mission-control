@@ -519,6 +519,22 @@
     .meeting-textarea { width:100%; min-height:80px; border:1px solid var(--line); border-radius:10px; background: rgba(255,255,255,.03); color:var(--text); padding:.5rem; }
 
     /* =========================
+       INTEL
+    ========================== */
+    .intel-brief-card,.intel-controls-card { padding:1rem; margin-bottom:1rem; }
+    .intel-filters { display:flex; gap:.6rem; margin-bottom:.8rem; }
+    .intel-filters select { border:1px solid var(--line); border-radius:10px; background: rgba(255,255,255,.03); color:var(--text); padding:.45rem .6rem; }
+    .intel-item {
+      border:1px solid var(--line); border-radius:12px; background: rgba(255,255,255,.03);
+      padding:.75rem; margin-bottom:.6rem;
+    }
+    .intel-meta { display:flex; gap:.5rem; flex-wrap:wrap; margin:.3rem 0; }
+    .intel-tag { font-size:.74rem; border-radius:999px; padding:.2rem .5rem; border:1px solid var(--line); }
+    .intel-tag.hot { color:#fda4af; border-color: rgba(239,68,68,.45); background: rgba(239,68,68,.15); }
+    .intel-tag.notable { color:#fcd34d; border-color: rgba(245,158,11,.45); background: rgba(245,158,11,.15); }
+    .intel-tag.reference { color:#bfdbfe; border-color: rgba(59,130,246,.45); background: rgba(59,130,246,.14); }
+
+    /* =========================
        MODAL
     ========================== */
     .modal-backdrop {
@@ -590,6 +606,7 @@
       .revenue-grid, .projection-grid, .agents-grid, .yt-growth-grid { grid-template-columns: 1fr; }
       .yt-pipeline { grid-template-columns: 1fr; }
       .yt-calendar-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
+      .intel-filters { flex-direction: column; }
       .client-row { grid-template-columns: 1fr; }
     }
   </style>
@@ -613,6 +630,7 @@
         <button class="tab-btn" data-tab="command">🏢 Command Center</button>
         <button class="tab-btn" data-tab="youtube">🎬 YouTube</button>
         <button class="tab-btn" data-tab="meetings">📞 Meetings</button>
+        <button class="tab-btn" data-tab="intel">📡 Intel</button>
         <button class="tab-btn" data-tab="notes">📝 Notes</button>
       </nav>
 
@@ -790,6 +808,34 @@
         </section>
       </section>
 
+      <!-- INTEL TAB -->
+      <section class="tab-pane" id="tab-intel">
+        <section class="card intel-brief-card">
+          <div class="section-title"><span>Daily Brief</span></div>
+          <div id="dailyBriefList"></div>
+        </section>
+
+        <section class="card intel-controls-card">
+          <div class="section-title"><span>Intel Feed</span><button class="button" id="addIntelBtn">+ Add Intel</button></div>
+          <div class="intel-filters">
+            <select id="intelCategoryFilter">
+              <option value="all">All Categories</option>
+              <option value="AI News">AI News</option>
+              <option value="Industry Trends">Industry Trends</option>
+              <option value="Competitor Watch">Competitor Watch</option>
+              <option value="Opportunities">Opportunities</option>
+            </select>
+            <select id="intelImportanceFilter">
+              <option value="all">All Importance</option>
+              <option value="hot">🔥 hot</option>
+              <option value="notable">⚡ notable</option>
+              <option value="reference">📌 reference</option>
+            </select>
+          </div>
+          <div id="intelList"></div>
+        </section>
+      </section>
+
       <!-- NOTES TAB -->
       <section class="tab-pane" id="tab-notes">
         <div class="card notes-wrap">
@@ -836,6 +882,33 @@
       <div class="modal-actions">
         <button class="button" id="cancelSendTaskBtn">Cancel</button>
         <button class="button" id="confirmSendTaskBtn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTEL MODAL -->
+  <div class="modal-backdrop" id="intelModalBackdrop">
+    <div class="modal">
+      <h3 id="intelModalTitle" style="margin-top:0;">Add Intel Item</h3>
+      <div class="field"><label>Title</label><input id="intelTitleInput" maxlength="140" /></div>
+      <div class="field"><label>Summary</label><textarea id="intelSummaryInput" rows="3" maxlength="600"></textarea></div>
+      <div class="field"><label>Source Link</label><input id="intelSourceInput" placeholder="https://..." /></div>
+      <div class="field"><label>Category</label>
+        <select id="intelCategoryInput">
+          <option>AI News</option><option>Industry Trends</option><option>Competitor Watch</option><option>Opportunities</option>
+        </select>
+      </div>
+      <div class="field"><label>Importance</label>
+        <select id="intelImportanceInput">
+          <option value="hot">🔥 hot</option>
+          <option value="notable">⚡ notable</option>
+          <option value="reference">📌 reference</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="button" id="cancelIntelBtn">Cancel</button>
+        <button class="button danger" id="deleteIntelBtn" style="display:none;">Delete</button>
+        <button class="button" id="saveIntelBtn">Save</button>
       </div>
     </div>
   </div>
@@ -963,7 +1036,8 @@
       decisions: 'mc_decisions_v1',
       youtubeIdeas: 'mc_youtube_ideas_v1',
       youtubeSubs: 'mc_youtube_subs_v1',
-      meetings: 'mc_meetings_v1'
+      meetings: 'mc_meetings_v1',
+      intelItems: 'mc_intel_items_v1'
     };
 
     const timelinePhases = [
@@ -1111,6 +1185,11 @@
           notes: '',
           actionItems: ''
         }
+      ],
+      intelItems: [
+        { id: crypto.randomUUID(), title: 'OpenAI shipped new agent tooling', summary: 'New capabilities for orchestration and tool use improved execution workflows.', source: 'https://openai.com', category: 'AI News', importance: 'hot', dateAdded: new Date().toISOString() },
+        { id: crypto.randomUUID(), title: 'PM tools moving to AI-native workflows', summary: 'Industry trend favors automation-first PM stacks with human checkpoints.', source: 'https://www.mckinsey.com', category: 'Industry Trends', importance: 'notable', dateAdded: new Date(Date.now()-86400000).toISOString() },
+        { id: crypto.randomUUID(), title: 'Competitor added auto-reporting dashboard', summary: 'Potential benchmark for executive visibility UX.', source: 'https://example.com', category: 'Competitor Watch', importance: 'reference', dateAdded: new Date(Date.now()-172800000).toISOString() }
       ]
     };
 
@@ -2047,6 +2126,116 @@
     }, 60000);
 
     /* =========================
+       INTEL
+    ========================== */
+    let editingIntel = null;
+
+    function getIntelItems() { return load(STORAGE_KEYS.intelItems, defaultState.intelItems); }
+    function setIntelItems(v) { save(STORAGE_KEYS.intelItems, v); }
+
+    function importanceLabel(i) {
+      return i === 'hot' ? '🔥 hot' : i === 'notable' ? '⚡ notable' : '📌 reference';
+    }
+
+    function renderIntel() {
+      const items = getIntelItems().slice().sort((a,b) => new Date(b.dateAdded) - new Date(a.dateAdded));
+      const cat = $('#intelCategoryFilter')?.value || 'all';
+      const imp = $('#intelImportanceFilter')?.value || 'all';
+      const filtered = items.filter(i => (cat === 'all' || i.category === cat) && (imp === 'all' || i.importance === imp));
+
+      const list = $('#intelList');
+      if (list) {
+        list.innerHTML = filtered.length ? filtered.map(i => `
+          <article class="intel-item" data-intel-id="${i.id}">
+            <div style="display:flex;justify-content:space-between;gap:.6rem;align-items:flex-start;">
+              <strong>${i.title}</strong>
+              <button class="button" data-edit-intel="${i.id}">Edit</button>
+            </div>
+            <p style="margin:.35rem 0;">${i.summary}</p>
+            <div class="intel-meta">
+              <span class="intel-tag ${i.importance}">${importanceLabel(i.importance)}</span>
+              <span class="meeting-pill">${i.category}</span>
+              <span class="meeting-pill">${new Date(i.dateAdded).toLocaleDateString()}</span>
+            </div>
+            <a href="${i.source || '#'}" target="_blank" rel="noopener" class="muted">Source</a>
+          </article>
+        `).join('') : '<div class="muted">No intel items match current filters.</div>';
+
+        list.querySelectorAll('[data-edit-intel]').forEach(btn => {
+          btn.onclick = () => {
+            const item = items.find(x => x.id === btn.getAttribute('data-edit-intel'));
+            openIntelModal(item);
+          };
+        });
+      }
+
+      const brief = items.filter(i => i.importance !== 'reference').slice(0,5);
+      const briefRoot = $('#dailyBriefList');
+      if (briefRoot) {
+        briefRoot.innerHTML = brief.length ? brief.map(i => `
+          <article class="intel-item">
+            <strong>${i.title}</strong>
+            <div class="intel-meta">
+              <span class="intel-tag ${i.importance}">${importanceLabel(i.importance)}</span>
+              <span class="meeting-pill">${i.category}</span>
+              <span class="meeting-pill">${new Date(i.dateAdded).toLocaleDateString()}</span>
+            </div>
+            <p style="margin:.3rem 0;">${i.summary}</p>
+          </article>
+        `).join('') : '<div class="muted">No high-priority intel yet.</div>';
+      }
+    }
+
+    function openIntelModal(item=null) {
+      editingIntel = item;
+      $('#intelModalBackdrop').classList.add('open');
+      $('#intelModalTitle').textContent = item ? 'Edit Intel Item' : 'Add Intel Item';
+      $('#deleteIntelBtn').style.display = item ? 'inline-block' : 'none';
+      $('#intelTitleInput').value = item?.title || '';
+      $('#intelSummaryInput').value = item?.summary || '';
+      $('#intelSourceInput').value = item?.source || '';
+      $('#intelCategoryInput').value = item?.category || 'AI News';
+      $('#intelImportanceInput').value = item?.importance || 'notable';
+    }
+
+    function closeIntelModal() { editingIntel = null; $('#intelModalBackdrop').classList.remove('open'); }
+
+    $('#addIntelBtn').addEventListener('click', () => openIntelModal());
+    $('#cancelIntelBtn').addEventListener('click', closeIntelModal);
+    $('#intelModalBackdrop').addEventListener('click', (e) => { if (e.target.id === 'intelModalBackdrop') closeIntelModal(); });
+
+    $('#saveIntelBtn').addEventListener('click', () => {
+      const title = $('#intelTitleInput').value.trim();
+      if (!title) return;
+      const payload = {
+        id: editingIntel?.id || crypto.randomUUID(),
+        title,
+        summary: $('#intelSummaryInput').value.trim(),
+        source: $('#intelSourceInput').value.trim(),
+        category: $('#intelCategoryInput').value,
+        importance: $('#intelImportanceInput').value,
+        dateAdded: editingIntel?.dateAdded || new Date().toISOString()
+      };
+      const next = getIntelItems().filter(i => i.id !== payload.id);
+      next.unshift(payload);
+      setIntelItems(next);
+      addActivity(`Intel ${editingIntel ? 'updated' : 'added'}: ${payload.title}`);
+      closeIntelModal();
+      renderIntel();
+    });
+
+    $('#deleteIntelBtn').addEventListener('click', () => {
+      if (!editingIntel) return;
+      setIntelItems(getIntelItems().filter(i => i.id !== editingIntel.id));
+      addActivity(`Intel removed: ${editingIntel.title}`);
+      closeIntelModal();
+      renderIntel();
+    });
+
+    $('#intelCategoryFilter').addEventListener('change', renderIntel);
+    $('#intelImportanceFilter').addEventListener('change', renderIntel);
+
+    /* =========================
        SEARCH + SHORTCUT
     ========================== */
     function runSearch(term) {
@@ -2088,6 +2277,7 @@
       if (!localStorage.getItem(STORAGE_KEYS.youtubeIdeas)) save(STORAGE_KEYS.youtubeIdeas, defaultState.youtubeIdeas);
       if (!localStorage.getItem(STORAGE_KEYS.youtubeSubs)) localStorage.setItem(STORAGE_KEYS.youtubeSubs, '850');
       if (!localStorage.getItem(STORAGE_KEYS.meetings)) save(STORAGE_KEYS.meetings, defaultState.meetings);
+      if (!localStorage.getItem(STORAGE_KEYS.intelItems)) save(STORAGE_KEYS.intelItems, defaultState.intelItems);
 
       notesInput.value = localStorage.getItem(STORAGE_KEYS.notes) || '';
 
@@ -2100,6 +2290,7 @@
       renderDecisions();
       renderYouTube();
       renderMeetings();
+      renderIntel();
       renderNotesMeta();
       renderMetrics();
     })();
