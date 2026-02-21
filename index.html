@@ -464,6 +464,32 @@
     .decision-item small { color:var(--muted); }
 
     /* =========================
+       YOUTUBE
+    ========================== */
+    .yt-ideas-card,.yt-growth-card,.yt-calendar-card { padding: 1rem; }
+    .yt-ideas-card { margin-bottom: 1rem; }
+    .yt-pipeline { display:grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap:.8rem; }
+    .yt-col { border:1px solid var(--line); border-radius:12px; background: rgba(255,255,255,.03); padding:.65rem; min-height: 200px; }
+    .yt-col-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:.55rem; }
+    .yt-col h4 { margin:.2rem 0; font-size:.9rem; text-transform: capitalize; }
+    .idea-card { border:1px solid var(--line); border-radius:10px; background: rgba(255,255,255,.03); padding:.55rem; margin-bottom:.45rem; cursor:pointer; }
+    .idea-card:hover { border-color: rgba(139,92,246,.45); }
+    .idea-card p { margin:.2rem 0; color: var(--muted); font-size:.82rem; }
+    .idea-card small { color: var(--muted); font-size:.74rem; }
+
+    .yt-growth-grid { display:grid; grid-template-columns: 1fr 1.2fr; gap:1rem; }
+    .yt-growth-controls { display:grid; gap:.6rem; margin-bottom:.8rem; }
+    .xp-wrap { display:grid; gap:.35rem; }
+    .xp-bar { width:100%; height:12px; border-radius:999px; background: rgba(255,255,255,.08); overflow:hidden; border:1px solid var(--line); }
+    #xpBarFill { width:0%; height:100%; background: linear-gradient(90deg, var(--accent), #a78bfa); box-shadow: 0 0 20px rgba(139,92,246,.35); transition: width .3s ease; }
+
+    .yt-calendar-grid { display:grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap:.35rem; }
+    .yt-day { border:1px solid var(--line); border-radius:10px; min-height:64px; padding:.35rem; background: rgba(255,255,255,.02); font-size:.78rem; }
+    .yt-day .d { color: var(--muted); font-size:.72rem; }
+    .yt-day.has-video { border-color: rgba(139,92,246,.45); box-shadow: inset 0 0 0 1px rgba(139,92,246,.2); }
+    .yt-day .v { margin-top:.25rem; font-size:.7rem; color:#d6c9ff; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    /* =========================
        MODAL
     ========================== */
     .modal-backdrop {
@@ -532,7 +558,9 @@
       .kanban { grid-template-columns: 1fr; }
       .search { width: 100%; }
       .header-right { width: 100%; }
-      .revenue-grid, .projection-grid, .agents-grid { grid-template-columns: 1fr; }
+      .revenue-grid, .projection-grid, .agents-grid, .yt-growth-grid { grid-template-columns: 1fr; }
+      .yt-pipeline { grid-template-columns: 1fr; }
+      .yt-calendar-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
       .client-row { grid-template-columns: 1fr; }
     }
   </style>
@@ -554,6 +582,7 @@
         <button class="tab-btn" data-tab="timeline">📅 Timeline</button>
         <button class="tab-btn" data-tab="revenue">💰 Revenue</button>
         <button class="tab-btn" data-tab="command">🏢 Command Center</button>
+        <button class="tab-btn" data-tab="youtube">🎬 YouTube</button>
         <button class="tab-btn" data-tab="notes">📝 Notes</button>
       </nav>
 
@@ -679,6 +708,37 @@
         </section>
       </section>
 
+      <!-- YOUTUBE TAB -->
+      <section class="tab-pane" id="tab-youtube">
+        <section class="card yt-ideas-card">
+          <div class="section-title">
+            <span>Video Ideas Pipeline</span>
+            <button class="button" id="addIdeaBtn">+ Add Idea</button>
+          </div>
+          <div class="yt-pipeline" id="ytPipeline"></div>
+        </section>
+
+        <section class="yt-growth-grid">
+          <section class="card yt-growth-card">
+            <div class="section-title"><span>YouTube Growth Tracker</span></div>
+            <div class="yt-growth-controls">
+              <label class="muted">Current Subscribers</label>
+              <input id="subCountInput" type="number" min="0" step="1" class="priority-input" />
+              <div class="muted" id="milestoneLabel">Milestone</div>
+            </div>
+            <div class="xp-wrap">
+              <div class="xp-bar"><div id="xpBarFill"></div></div>
+              <small class="muted" id="xpProgressText">0%</small>
+            </div>
+          </section>
+
+          <section class="card yt-calendar-card">
+            <div class="section-title"><span>Content Calendar</span><span id="calendarMonthLabel" class="muted"></span></div>
+            <div class="yt-calendar-grid" id="ytCalendarGrid"></div>
+          </section>
+        </section>
+      </section>
+
       <!-- NOTES TAB -->
       <section class="tab-pane" id="tab-notes">
         <div class="card notes-wrap">
@@ -725,6 +785,30 @@
       <div class="modal-actions">
         <button class="button" id="cancelSendTaskBtn">Cancel</button>
         <button class="button" id="confirmSendTaskBtn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIDEO IDEA MODAL -->
+  <div class="modal-backdrop" id="ideaModalBackdrop">
+    <div class="modal">
+      <h3 id="ideaModalTitle" style="margin-top:0;">Add Video Idea</h3>
+      <div class="field"><label>Title</label><input id="ideaTitleInput" maxlength="120" /></div>
+      <div class="field"><label>Topic</label><input id="ideaTopicInput" maxlength="120" /></div>
+      <div class="field"><label>Status</label>
+        <select id="ideaStatusInput">
+          <option value="idea">Idea</option>
+          <option value="scripting">Scripting</option>
+          <option value="filming">Filming</option>
+          <option value="editing">Editing</option>
+          <option value="published">Published</option>
+        </select>
+      </div>
+      <div class="field"><label>Target Publish Date</label><input id="ideaDateInput" type="date" /></div>
+      <div class="modal-actions">
+        <button class="button" id="cancelIdeaBtn">Cancel</button>
+        <button class="button danger" id="deleteIdeaBtn" style="display:none;">Delete</button>
+        <button class="button" id="saveIdeaBtn">Save</button>
       </div>
     </div>
   </div>
@@ -802,7 +886,9 @@
       clients: 'mc_clients_v1',
       revenueGoal: 'mc_revenue_goal_v1',
       agents: 'mc_agents_v1',
-      decisions: 'mc_decisions_v1'
+      decisions: 'mc_decisions_v1',
+      youtubeIdeas: 'mc_youtube_ideas_v1',
+      youtubeSubs: 'mc_youtube_subs_v1'
     };
 
     const timelinePhases = [
@@ -918,6 +1004,11 @@
           summary: 'Split 70/30 toward automation to reduce execution risk and rework.',
           consultedAgents: ['Volt', 'Echo']
         }
+      ],
+      youtubeIdeas: [
+        { id: crypto.randomUUID(), title: 'How we ship MVP in 30 days', topic: 'Execution', status: 'idea', targetDate: new Date().toISOString().slice(0,10) },
+        { id: crypto.randomUUID(), title: 'Behind the scenes: Le Funk PM', topic: 'Build in public', status: 'scripting', targetDate: new Date(Date.now()+86400000*5).toISOString().slice(0,10) },
+        { id: crypto.randomUUID(), title: 'Dashboard deep dive', topic: 'Product demo', status: 'editing', targetDate: new Date(Date.now()+86400000*10).toISOString().slice(0,10) }
       ]
     };
 
@@ -1484,6 +1575,163 @@
     window.addEventListener('resize', drawRevenueChart);
 
     /* =========================
+       YOUTUBE
+    ========================== */
+    const YT_STATUSES = ['idea','scripting','filming','editing','published'];
+    const YT_MILESTONES = [
+      { subs: 0, title: 'Starting Signal' },
+      { subs: 1000, title: 'Rising Creator' },
+      { subs: 10000, title: 'Growth Engine' },
+      { subs: 50000, title: 'Audience Magnet' },
+      { subs: 100000, title: 'Creator Force' }
+    ];
+
+    let editingIdea = null;
+
+    function getYoutubeIdeas() { return load(STORAGE_KEYS.youtubeIdeas, defaultState.youtubeIdeas); }
+    function setYoutubeIdeas(v) { save(STORAGE_KEYS.youtubeIdeas, v); }
+
+    function renderYouTubePipeline() {
+      const ideas = getYoutubeIdeas();
+      const root = $('#ytPipeline');
+      if (!root) return;
+      root.innerHTML = YT_STATUSES.map(st => {
+        const cards = ideas.filter(i => i.status === st).map(i => `
+          <article class="idea-card" data-idea-id="${i.id}">
+            <strong>${i.title}</strong>
+            <p>${i.topic}</p>
+            <small>Target: ${i.targetDate || '—'}</small>
+          </article>
+        `).join('');
+
+        return `
+          <div class="yt-col">
+            <div class="yt-col-head">
+              <h4>${st}</h4>
+              <button class="button" data-add-idea="${st}">+ Add</button>
+            </div>
+            ${cards || '<small class="muted">No items</small>'}
+          </div>
+        `;
+      }).join('');
+
+      root.querySelectorAll('[data-add-idea]').forEach(btn => btn.addEventListener('click', () => openIdeaModal(null, btn.dataset.addIdea)));
+      root.querySelectorAll('[data-idea-id]').forEach(card => {
+        card.addEventListener('click', () => {
+          const idea = ideas.find(x => x.id === card.dataset.ideaId);
+          openIdeaModal(idea, idea?.status || 'idea');
+        });
+      });
+    }
+
+    function renderGrowthTracker() {
+      const subs = Number(localStorage.getItem(STORAGE_KEYS.youtubeSubs) || 0);
+      $('#subCountInput').value = subs;
+
+      let current = YT_MILESTONES[0], next = YT_MILESTONES[1] || YT_MILESTONES[0];
+      for (let i=0;i<YT_MILESTONES.length;i++) {
+        if (subs >= YT_MILESTONES[i].subs) current = YT_MILESTONES[i];
+        if (subs < YT_MILESTONES[i].subs) { next = YT_MILESTONES[i]; break; }
+        if (i === YT_MILESTONES.length-1) next = YT_MILESTONES[i];
+      }
+
+      const span = Math.max(1, next.subs - current.subs);
+      const pct = next.subs === current.subs ? 100 : Math.min(100, ((subs - current.subs) / span) * 100);
+      $('#xpBarFill').style.width = `${pct}%`;
+      $('#milestoneLabel').textContent = `Current: ${current.title} · Next: ${next.title} (${next.subs.toLocaleString()} subs)`;
+      $('#xpProgressText').textContent = `${Math.round(pct)}% to next milestone`;
+    }
+
+    function renderContentCalendar() {
+      const ideas = getYoutubeIdeas();
+      const root = $('#ytCalendarGrid');
+      if (!root) return;
+
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const first = new Date(year, month, 1);
+      const last = new Date(year, month + 1, 0);
+      const startDow = first.getDay();
+      const days = last.getDate();
+
+      $('#calendarMonthLabel').textContent = now.toLocaleDateString([], { month: 'long', year: 'numeric' });
+
+      const dayLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const cells = [];
+      dayLabels.forEach(d => cells.push(`<div class="yt-day muted" style="min-height:28px;display:grid;place-items:center;">${d}</div>`));
+      for (let i=0;i<startDow;i++) cells.push('<div class="yt-day" style="opacity:.35"></div>');
+
+      for (let d=1; d<=days; d++) {
+        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const vids = ideas.filter(i => i.targetDate === dateStr);
+        cells.push(`
+          <div class="yt-day ${vids.length ? 'has-video' : ''}">
+            <span class="d">${d}</span>
+            ${vids.slice(0,2).map(v => `<span class="v">🎬 ${v.title}</span>`).join('')}
+          </div>
+        `);
+      }
+      root.innerHTML = cells.join('');
+    }
+
+    function openIdeaModal(idea=null, status='idea') {
+      editingIdea = idea;
+      $('#ideaModalBackdrop').classList.add('open');
+      $('#ideaModalTitle').textContent = idea ? 'Edit Video Idea' : 'Add Video Idea';
+      $('#deleteIdeaBtn').style.display = idea ? 'inline-block' : 'none';
+      $('#ideaTitleInput').value = idea?.title || '';
+      $('#ideaTopicInput').value = idea?.topic || '';
+      $('#ideaStatusInput').value = idea?.status || status;
+      $('#ideaDateInput').value = idea?.targetDate || new Date().toISOString().slice(0,10);
+    }
+
+    function closeIdeaModal() { editingIdea = null; $('#ideaModalBackdrop').classList.remove('open'); }
+
+    $('#addIdeaBtn').addEventListener('click', () => openIdeaModal());
+    $('#cancelIdeaBtn').addEventListener('click', closeIdeaModal);
+    $('#ideaModalBackdrop').addEventListener('click', (e) => { if (e.target.id === 'ideaModalBackdrop') closeIdeaModal(); });
+
+    $('#saveIdeaBtn').addEventListener('click', () => {
+      const title = $('#ideaTitleInput').value.trim();
+      if (!title) return;
+      const payload = {
+        id: editingIdea?.id || crypto.randomUUID(),
+        title,
+        topic: $('#ideaTopicInput').value.trim() || 'General',
+        status: $('#ideaStatusInput').value,
+        targetDate: $('#ideaDateInput').value || new Date().toISOString().slice(0,10)
+      };
+      let ideas = getYoutubeIdeas().filter(i => i.id !== payload.id);
+      ideas.unshift(payload);
+      setYoutubeIdeas(ideas);
+      addActivity(`YouTube idea ${editingIdea ? 'updated' : 'added'}: ${payload.title}`);
+      closeIdeaModal();
+      renderYouTubePipeline();
+      renderContentCalendar();
+    });
+
+    $('#deleteIdeaBtn').addEventListener('click', () => {
+      if (!editingIdea) return;
+      setYoutubeIdeas(getYoutubeIdeas().filter(i => i.id !== editingIdea.id));
+      addActivity(`YouTube idea removed: ${editingIdea.title}`);
+      closeIdeaModal();
+      renderYouTubePipeline();
+      renderContentCalendar();
+    });
+
+    $('#subCountInput').addEventListener('change', () => {
+      localStorage.setItem(STORAGE_KEYS.youtubeSubs, String(Number($('#subCountInput').value || 0)));
+      renderGrowthTracker();
+    });
+
+    function renderYouTube() {
+      renderYouTubePipeline();
+      renderGrowthTracker();
+      renderContentCalendar();
+    }
+
+    /* =========================
        SEARCH + SHORTCUT
     ========================== */
     function runSearch(term) {
@@ -1522,6 +1770,8 @@
       if (!localStorage.getItem(STORAGE_KEYS.revenueGoal)) localStorage.setItem(STORAGE_KEYS.revenueGoal, '10000');
       if (!localStorage.getItem(STORAGE_KEYS.agents)) save(STORAGE_KEYS.agents, defaultState.agents);
       if (!localStorage.getItem(STORAGE_KEYS.decisions)) save(STORAGE_KEYS.decisions, defaultState.decisions);
+      if (!localStorage.getItem(STORAGE_KEYS.youtubeIdeas)) save(STORAGE_KEYS.youtubeIdeas, defaultState.youtubeIdeas);
+      if (!localStorage.getItem(STORAGE_KEYS.youtubeSubs)) localStorage.setItem(STORAGE_KEYS.youtubeSubs, '850');
 
       notesInput.value = localStorage.getItem(STORAGE_KEYS.notes) || '';
 
@@ -1532,6 +1782,7 @@
       renderRevenue();
       renderAgents();
       renderDecisions();
+      renderYouTube();
       renderNotesMeta();
       renderMetrics();
     })();
