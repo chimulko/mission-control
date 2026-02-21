@@ -401,6 +401,44 @@
     }
 
     /* =========================
+       REVENUE
+    ========================== */
+    .revenue-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .revenue-goal-card,.revenue-chart-card,.revenue-clients-card,.revenue-projection-card { padding: 1rem; }
+    .goal-row { display:flex; gap:1rem; align-items:center; }
+    .goal-gauge-wrap { display:grid; place-items:center; }
+    .goal-gauge {
+      --deg: 0deg;
+      width: 150px; height: 150px; border-radius: 50%;
+      display:grid; place-items:center;
+      background: conic-gradient(var(--accent) var(--deg), rgba(255,255,255,0.08) 0deg);
+      position: relative;
+      box-shadow: 0 0 25px rgba(139,92,246,0.25);
+      font-weight: 700;
+    }
+    .goal-gauge::after { content:""; position:absolute; inset:10px; border-radius:50%; background: rgba(7,7,11,0.95); border:1px solid var(--line); }
+    .goal-gauge span { position:relative; z-index:1; }
+    .goal-controls { flex:1; display:grid; gap:.6rem; }
+    .clients-list { display:grid; gap:.6rem; }
+    .client-row {
+      border:1px solid var(--line); border-radius:12px; padding:.75rem;
+      display:grid; grid-template-columns: 1.3fr .8fr .8fr .9fr auto; gap:.6rem; align-items:center;
+      background: rgba(255,255,255,0.03);
+    }
+    .status-pill { padding:.2rem .5rem; border-radius:999px; font-size:.78rem; font-weight:600; width:max-content; }
+    .status-pill.active { background: rgba(34,197,94,.2); color:#86efac; }
+    .status-pill.pending { background: rgba(245,158,11,.2); color:#fcd34d; }
+    .status-pill.churned { background: rgba(239,68,68,.2); color:#fca5a5; }
+    .projection-grid { display:grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap:.8rem; }
+    .projection-item { border:1px solid var(--line); border-radius:12px; padding:.8rem; background: rgba(255,255,255,.03); }
+    .projection-item h3 { margin:.4rem 0 0; }
+
+    /* =========================
        MODAL
     ========================== */
     .modal-backdrop {
@@ -469,6 +507,8 @@
       .kanban { grid-template-columns: 1fr; }
       .search { width: 100%; }
       .header-right { width: 100%; }
+      .revenue-grid, .projection-grid { grid-template-columns: 1fr; }
+      .client-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -487,6 +527,7 @@
         <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
         <button class="tab-btn" data-tab="projects">📋 Projects</button>
         <button class="tab-btn" data-tab="timeline">📅 Timeline</button>
+        <button class="tab-btn" data-tab="revenue">💰 Revenue</button>
         <button class="tab-btn" data-tab="notes">📝 Notes</button>
       </nav>
 
@@ -558,6 +599,47 @@
         <div class="timeline" id="timelineContainer"></div>
       </section>
 
+      <!-- REVENUE TAB -->
+      <section class="tab-pane" id="tab-revenue">
+        <div class="revenue-grid">
+          <section class="card revenue-goal-card">
+            <div class="section-title"><span>Monthly Revenue Goal</span></div>
+            <div class="goal-row">
+              <div class="goal-gauge-wrap">
+                <div class="goal-gauge" id="goalGauge"><span id="goalGaugeLabel">0%</span></div>
+              </div>
+              <div class="goal-controls">
+                <label class="muted">Goal (Monthly)</label>
+                <input id="revenueGoalInput" type="number" min="0" step="100" class="priority-input" />
+                <div class="muted" id="mrrSummary">MRR: $0</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card revenue-chart-card">
+            <div class="section-title"><span>Revenue (Last 6 Months)</span></div>
+            <canvas id="revenueChart" height="240"></canvas>
+          </section>
+        </div>
+
+        <section class="card revenue-clients-card">
+          <div class="section-title">
+            <span>Clients</span>
+            <button class="button" id="addClientBtn">+ Add Client</button>
+          </div>
+          <div class="clients-list" id="clientsList"></div>
+        </section>
+
+        <section class="card revenue-projection-card">
+          <div class="section-title"><span>Revenue Projections</span></div>
+          <div class="projection-grid">
+            <div class="projection-item"><small class="muted">Projected Annual @ current MRR</small><h3 id="projectedAnnual">$0</h3></div>
+            <div class="projection-item"><small class="muted">Gap to Monthly Goal</small><h3 id="goalGap">$0</h3></div>
+            <div class="projection-item"><small class="muted">Monthly Growth Needed (6 months)</small><h3 id="growthNeeded">0%</h3></div>
+          </div>
+        </section>
+      </section>
+
       <!-- NOTES TAB -->
       <section class="tab-pane" id="tab-notes">
         <div class="card notes-wrap">
@@ -570,6 +652,28 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- CLIENT MODAL -->
+  <div class="modal-backdrop" id="clientModalBackdrop">
+    <div class="modal">
+      <h3 id="clientModalTitle" style="margin-top:0;">Add Client</h3>
+      <div class="field"><label>Name</label><input id="clientNameInput" maxlength="80" /></div>
+      <div class="field"><label>Monthly Value (USD)</label><input id="clientValueInput" type="number" min="0" step="50" /></div>
+      <div class="field"><label>Status</label>
+        <select id="clientStatusInput">
+          <option value="active">Active</option>
+          <option value="pending">Pending</option>
+          <option value="churned">Churned</option>
+        </select>
+      </div>
+      <div class="field"><label>Start Date</label><input id="clientStartInput" type="date" /></div>
+      <div class="modal-actions">
+        <button class="button" id="cancelClientBtn">Cancel</button>
+        <button class="button danger" id="deleteClientBtn" style="display:none;">Delete</button>
+        <button class="button" id="saveClientBtn">Save</button>
+      </div>
+    </div>
   </div>
 
   <!-- TASK MODAL -->
@@ -619,7 +723,9 @@
       notes: 'mc_notes_v1',
       notesSavedAt: 'mc_notes_saved_at_v1',
       mvpProgress: 'mc_mvp_progress_v1',
-      goalStartDate: 'mc_goal_start_date_v1'
+      goalStartDate: 'mc_goal_start_date_v1',
+      clients: 'mc_clients_v1',
+      revenueGoal: 'mc_revenue_goal_v1'
     };
 
     const timelinePhases = [
@@ -674,6 +780,10 @@
       ],
       activities: [
         { id: crypto.randomUUID(), text: 'Mission Control initialized', timestamp: new Date().toISOString() }
+      ],
+      clients: [
+        { id: crypto.randomUUID(), name: 'Le Funk Core', monthlyValue: 3500, status: 'active', startDate: new Date().toISOString().slice(0,10) },
+        { id: crypto.randomUUID(), name: 'Pilot Client', monthlyValue: 1200, status: 'pending', startDate: new Date().toISOString().slice(0,10) }
       ]
     };
 
@@ -1003,6 +1113,148 @@
     }
 
     /* =========================
+       REVENUE
+    ========================== */
+    const revenueGoalInput = $('#revenueGoalInput');
+    let editingClient = null;
+
+    function getClients() { return load(STORAGE_KEYS.clients, defaultState.clients); }
+    function setClients(v) { save(STORAGE_KEYS.clients, v); }
+    function money(n) { return `$${Number(n||0).toLocaleString()}`; }
+
+    function getMRR() {
+      return getClients().filter(c => c.status === 'active').reduce((sum, c) => sum + Number(c.monthlyValue || 0), 0);
+    }
+
+    function drawRevenueChart() {
+      const canvas = $('#revenueChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.clientWidth || 500;
+      const h = canvas.height;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, w, h);
+
+      const mrr = getMRR();
+      const months = Array.from({length:6}, (_,i)=>{
+        const d=new Date(); d.setMonth(d.getMonth()-(5-i));
+        return d.toLocaleDateString([], {month:'short'});
+      });
+      const vals = months.map((_,i)=> Math.max(0, Math.round(mrr * (0.72 + i*0.06))));
+      const max = Math.max(...vals, 1);
+      const pad = 28; const chartH = h - 42; const barW = (w - pad*2) / vals.length * 0.58;
+
+      vals.forEach((v,i)=>{
+        const slot = (w - pad*2) / vals.length;
+        const x = pad + i*slot + (slot-barW)/2;
+        const bh = (v/max) * (chartH - 28);
+        const y = chartH - bh;
+        ctx.fillStyle = 'rgba(255,255,255,0.08)';
+        ctx.fillRect(x, y, barW, bh);
+        const grad = ctx.createLinearGradient(0,y,0,chartH);
+        grad.addColorStop(0, '#8B5CF6'); grad.addColorStop(1, 'rgba(139,92,246,.3)');
+        ctx.fillStyle = grad; ctx.fillRect(x, y + bh*0.25, barW, bh*0.75);
+        ctx.fillStyle = '#a5a6b8'; ctx.font = '12px Inter'; ctx.textAlign = 'center';
+        ctx.fillText(months[i], x + barW/2, h - 12);
+      });
+    }
+
+    function renderRevenue() {
+      const clients = getClients();
+      const list = $('#clientsList');
+      list.innerHTML = clients.length ? clients.map(c => `
+        <div class="client-row">
+          <strong>${c.name}</strong>
+          <span>${money(c.monthlyValue)}</span>
+          <span class="status-pill ${c.status}">${c.status}</span>
+          <span class="muted">${c.startDate || '-'}</span>
+          <button class="button" data-client="${c.id}">Edit</button>
+        </div>
+      `).join('') : '<div class="muted">No clients yet.</div>';
+
+      list.querySelectorAll('[data-client]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const client = clients.find(c => c.id === btn.dataset.client);
+          openClientModal(client);
+        });
+      });
+
+      const mrr = getMRR();
+      const goal = Number(localStorage.getItem(STORAGE_KEYS.revenueGoal)) || 10000;
+      const pct = goal ? Math.min(100, Math.round((mrr/goal)*100)) : 0;
+      $('#goalGauge').style.setProperty('--deg', `${Math.round((pct/100)*360)}deg`);
+      $('#goalGaugeLabel').textContent = `${pct}%`;
+      $('#mrrSummary').textContent = `MRR: ${money(mrr)}`;
+      revenueGoalInput.value = goal;
+
+      const annual = mrr * 12;
+      const gap = Math.max(0, goal - mrr);
+      const growthNeeded = mrr > 0 && goal > mrr ? ((Math.pow(goal / mrr, 1 / 6) - 1) * 100) : 0;
+      $('#projectedAnnual').textContent = money(annual);
+      $('#goalGap').textContent = money(gap);
+      $('#growthNeeded').textContent = `${growthNeeded.toFixed(1)}%`;
+
+      drawRevenueChart();
+    }
+
+    function openClientModal(client=null) {
+      editingClient = client;
+      $('#clientModalBackdrop').classList.add('open');
+      $('#clientModalTitle').textContent = client ? 'Edit Client' : 'Add Client';
+      $('#deleteClientBtn').style.display = client ? 'inline-block' : 'none';
+      $('#clientNameInput').value = client?.name || '';
+      $('#clientValueInput').value = client?.monthlyValue ?? '';
+      $('#clientStatusInput').value = client?.status || 'active';
+      $('#clientStartInput').value = client?.startDate || new Date().toISOString().slice(0,10);
+    }
+
+    function closeClientModal() {
+      editingClient = null;
+      $('#clientModalBackdrop').classList.remove('open');
+    }
+
+    $('#addClientBtn').addEventListener('click', ()=>openClientModal());
+    $('#cancelClientBtn').addEventListener('click', closeClientModal);
+    $('#clientModalBackdrop').addEventListener('click', (e)=>{ if (e.target.id==='clientModalBackdrop') closeClientModal(); });
+
+    $('#saveClientBtn').addEventListener('click', ()=>{
+      const name = $('#clientNameInput').value.trim();
+      if (!name) return;
+      const payload = {
+        id: editingClient?.id || crypto.randomUUID(),
+        name,
+        monthlyValue: Number($('#clientValueInput').value || 0),
+        status: $('#clientStatusInput').value,
+        startDate: $('#clientStartInput').value || new Date().toISOString().slice(0,10)
+      };
+      let clients = getClients();
+      clients = clients.filter(c => c.id !== payload.id);
+      clients.unshift(payload);
+      setClients(clients);
+      addActivity(`Client ${editingClient ? 'updated' : 'added'}: ${payload.name}`);
+      renderRevenue();
+      closeClientModal();
+    });
+
+    $('#deleteClientBtn').addEventListener('click', ()=>{
+      if (!editingClient) return;
+      setClients(getClients().filter(c => c.id !== editingClient.id));
+      addActivity(`Client removed: ${editingClient.name}`);
+      renderRevenue();
+      closeClientModal();
+    });
+
+    revenueGoalInput.addEventListener('change', ()=>{
+      localStorage.setItem(STORAGE_KEYS.revenueGoal, String(Number(revenueGoalInput.value || 0)));
+      renderRevenue();
+    });
+
+    window.addEventListener('resize', drawRevenueChart);
+
+    /* =========================
        SEARCH + SHORTCUT
     ========================== */
     function runSearch(term) {
@@ -1037,6 +1289,8 @@
       if (!localStorage.getItem(STORAGE_KEYS.tasks)) save(STORAGE_KEYS.tasks, defaultState.tasks);
       if (!localStorage.getItem(STORAGE_KEYS.priorities)) save(STORAGE_KEYS.priorities, defaultState.priorities);
       if (!localStorage.getItem(STORAGE_KEYS.activities)) save(STORAGE_KEYS.activities, defaultState.activities);
+      if (!localStorage.getItem(STORAGE_KEYS.clients)) save(STORAGE_KEYS.clients, defaultState.clients);
+      if (!localStorage.getItem(STORAGE_KEYS.revenueGoal)) localStorage.setItem(STORAGE_KEYS.revenueGoal, '10000');
 
       notesInput.value = localStorage.getItem(STORAGE_KEYS.notes) || '';
 
@@ -1044,6 +1298,7 @@
       renderActivityFeed();
       renderKanban();
       renderTimeline();
+      renderRevenue();
       renderNotesMeta();
       renderMetrics();
     })();
